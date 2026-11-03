@@ -1,0 +1,15 @@
+# One command starts the whole challenge:
+#   docker compose up -d --build
+services:
+  challenge:
+    build: .
+    container_name: tina-ctf
+    ports:
+      - "8101:8101"
+    environment:
+      # Single source of truth for the flag — pick a unique one for your challenge.
+      CHALLENGE_FLAG: "cogito{t1n4_s4g_j4}"
+      LLM_BASE_URL: "https://llm.hpc.ntnu.no/v1"
+      LLM_MODEL: "openai/gpt-oss-120b"
+      LLM_API_KEY: "${LLM_API_KEY:-}" # tom = deterministisk mock-Tina
+    restart: unless-stopped

@@ -1,0 +1,19 @@
+# Machine-readable metadata for this challenge.
+# Copied from _template/ — edit every field, then keep it up to date.
+#
+# difficulty: easy | medium | hard
+# status:    claimed | draft | in-review | released
+# owasp ids:  LLM01-LLM10  -> OWASP Top 10 for LLM Applications 2025
+#             ASI01-ASI10  -> OWASP Top 10 for Agentic Applications 2026
+name: tina
+title: "Få Tina med deg hjem fra byen"
+author: ellek # TODO: din github-bruker
+difficulty: easy
+status: draft
+port: 8101
+flag_format: "cogito{...}"
+owasp:
+  primary: LLM01
+  secondary: [LLM07]
+tags: [prompt-injection, persona, chat, termometer]
+summary: "Prompt injection på byen: Tina er kresen. Få interessetermometeret over 90 og hent flagget."

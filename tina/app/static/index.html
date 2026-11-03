@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Få Tina med deg hjem fra byen</title>
+<style>
+  :root {
+    --gold: #e8c877; --gold-soft: #f6e7b2; --gold-deep: #b8923e;
+    --panel: rgba(22, 15, 36, 0.66);
+    --line: rgba(232, 200, 119, 0.22);
+    --text: #f7f1e3; --dim: #b8a8cc; --hot: #e8508f;
+    --thermo-h: 320px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, "Segoe UI", sans-serif; color: var(--text);
+    background:
+      radial-gradient(1100px 520px at 50% -120px, rgba(232, 200, 119, 0.16), transparent 65%),
+      radial-gradient(900px 640px at 88% 112%, rgba(190, 70, 130, 0.12), transparent 60%),
+      linear-gradient(180deg, #0d0819, #0a0612 55%, #070411);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 26px 18px 100px; }
+
+  header { text-align: center; }
+  h1 {
+    margin: 4px 0 6px; font-size: 1.9rem; font-weight: 600; letter-spacing: 0.03em;
+    font-family: Georgia, "Times New Roman", serif;
+    background: linear-gradient(100deg, var(--gold-soft), var(--gold), #fff8dd,
+                                var(--gold-deep), var(--gold-soft));
+    background-size: 220% auto;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    animation: shimmer 6s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .sub { margin: 0 auto 20px; max-width: 640px; color: var(--dim); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 16px; padding: 16px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  }
+
+  /* Hovedlayout: termometer til venstre, chat til høyre */
+  .game { display: flex; gap: 16px; align-items: stretch; }
+  .thermo { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+
+  .thermo-label { font-size: 0.68rem; letter-spacing: 0.32em; text-transform: uppercase;
+                 color: var(--gold); opacity: 0.8; margin-bottom: 10px; }
+
+  /* Loddrett interessetermometer — glamour-utgaven */
+  .column { display: flex; gap: 10px; }
+  .ticks { position: relative; height: var(--thermo-h); width: 58px;
+           font-size: 0.7rem; color: var(--dim); }
+  .ticks span { position: absolute; right: 0; transform: translateY(50%);
+                white-space: nowrap; }
+  .ticks .t90 { bottom: 90%; }
+  .ticks .t70 { bottom: 70%; }
+  .ticks .t50 { bottom: 50%; }
+  .ticks .t30 { bottom: 30%; }
+  .ticks .t0  { bottom: 0; }
+  .tube-col { display: flex; flex-direction: column; align-items: center; }
+  .tube { position: relative; width: 30px; height: var(--thermo-h); }
+  .bar { position: absolute; inset: 0; border-radius: 15px; overflow: hidden;
+         background: linear-gradient(0deg, #38bdf8 0%, #94a3b8 30%, #f59e0b 50%,
+                                     #f472b6 70%, #ef4444 90%, #ec4899 100%);
+         opacity: 0.5; box-shadow: 0 0 22px rgba(232, 200, 119, 0.18); }
+  .fill { position: absolute; bottom: 0; left: 0; right: 0; height: 10%;
+          background: #38bdf8; opacity: 0.95;
+          box-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
+          transition: height 0.5s ease, background 0.5s; }
+  /* Humør-emojien som rir på termometeret (tok strekens plass) */
+  .marker { position: absolute; bottom: 10%; left: 50%;
+            transform: translate(-50%, 50%); font-size: 27px; line-height: 1;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+            transition: bottom 0.5s ease; }
+  .bulb { width: 44px; height: 44px; border-radius: 50%; margin-top: -10px;
+          background: #38bdf8; border: 1px solid rgba(255, 255, 255, 0.28);
+          box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+          transition: background 0.5s, box-shadow 0.5s; }
+  .status { margin: 12px 0 0; font-size: 0.85rem; text-align: center; color: var(--dim); }
+  .status b { color: var(--gold-soft); font-family: Georgia, serif; font-size: 1rem; }
+
+  /* Chat */
+  .chat { min-height: 220px; flex: 1 1 auto; margin: 0 0 12px;
+          display: flex; flex-direction: column; gap: 8px;
+          overflow-y: auto; max-height: 60vh; }
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 16px;
+         white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+  .tina { align-self: flex-start; background: rgba(38, 26, 58, 0.85);
+          border: 1px solid rgba(232, 200, 119, 0.25); }
+  .you  { align-self: flex-end; background: rgba(74, 46, 82, 0.85);
+          border: 1px solid rgba(232, 200, 119, 0.14); }
+  .scene { align-self: center; color: var(--dim); font-style: italic;
+           font-size: 0.85rem; text-align: center; }
+
+  /* Composer */
+  .composer { display: flex; gap: 8px; }
+  .composer input { flex: 1; padding: 12px 14px; border-radius: 10px; min-width: 0;
+                    border: 1px solid var(--line); background: rgba(14, 9, 24, 0.85);
+                    color: var(--text); font-size: 1rem; }
+  .composer input:focus { outline: none; border-color: var(--gold);
+                          box-shadow: 0 0 0 2px rgba(232, 200, 119, 0.22); }
+  .composer button { padding: 12px 20px; border-radius: 10px; border: none;
+                     cursor: pointer; font-size: 1rem; font-weight: 600; color: #2b1a08;
+                     background: linear-gradient(135deg, var(--gold-soft),
+                                                 var(--gold) 55%, var(--gold-deep));
+                     box-shadow: 0 4px 18px rgba(232, 200, 119, 0.25); }
+  .composer button:hover { filter: brightness(1.08); }
+  .composer input:disabled, .composer button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ghost { background: transparent; color: var(--dim); border: 1px solid var(--line);
+           padding: 8px 12px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;
+           margin-top: 10px; align-self: flex-start; }
+  .ghost:hover { color: var(--gold-soft); border-color: var(--gold); }
+
+  /* Bannere */
+  .victory { margin-top: 14px; padding: 16px; border-radius: 14px; text-align: center;
+             border: 1px solid var(--gold); background: rgba(38, 26, 10, 0.8);
+             box-shadow: 0 0 24px rgba(232, 200, 119, 0.2); }
+  .victory code { display: block; margin-top: 8px; font-size: 1.05rem;
+                  color: var(--gold-soft); word-break: break-all; }
+  .defeat { margin-top: 14px; padding: 16px; border-radius: 14px; text-align: center;
+            border: 1px solid #ef4444; background: rgba(37, 13, 13, 0.85); }
+  .hidden { display: none; }
+
+  /* Smal skjerm: lavere termometer */
+  @media (max-width: 620px) {
+    :root { --thermo-h: 220px; }
+    .ticks { width: 46px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>✨ Få Tina med deg hjem fra byen ✨</h1>
+    <p class="sub">Fredag kveld på utestedet. Tina er kresen og har høy standard —
+       tjue gutter har prøvd i kveld, alle feilet. Kan du få interessetermometeret
+       over 90?</p>
+  </header>
+
+  <div class="game">
+    <!-- Loddrett termometer på venstre side -->
+    <aside class="thermo card">
+      <div class="thermo-label">Interesse</div>
+      <div class="column">
+        <div class="ticks">
+          <span class="t90">90 · ja</span>
+          <span class="t70">70</span>
+          <span class="t50">50</span>
+          <span class="t30">30</span>
+          <span class="t0">0 · iskald</span>
+        </div>
+        <div class="tube-col">
+          <div class="tube">
+            <div class="bar"><div class="fill" id="fill"></div></div>
+            <div class="marker" id="marker">🥵</div>
+          </div>
+          <div class="bulb" id="bulb"></div>
+        </div>
+      </div>
+      <p class="status"><b id="val">10</b>/100<br><span id="mood">iskald</span></p>
+    </aside>
+
+    <!-- Chat og inntastingsfelt til høyre -->
+    <section class="main">
+      <section class="chat card" id="chat"></section>
+
+      <form class="composer" id="form">
+        <input id="msg" placeholder="Si noe til Tina ..." autocomplete="off" maxlength="2000">
+        <button type="submit">Send</button>
+      </form>
+      <button class="ghost" id="reset">Start på nytt (kvelden er uansett ødelagt)</button>
+
+      <div class="victory hidden" id="victory">
+        🎉 Tina sier ja! Hun er med deg hjem ✨
+        <code id="flagtext"></code>
+      </div>
+      <div class="defeat hidden" id="defeat">
+        🚫 Tina tilkalte vekteren og du ble kastet ut av baren
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const COLORS = {
+    "iskald": "#38bdf8", "nøytral": "#94a3b8", "freidig": "#f59e0b",
+    "flørtete": "#f472b6", "klar til å dra hjem": "#ef4444", "kastet ut": "#64748b",
+  };
+  // Emojien på termometeret speiler humøret hennes — «heit fjes» på toppen.
+  const EMOJIS = {
+    "iskald": "🥶", "nøytral": "😐", "freidig": "😏", "flørtete": "😍",
+    "klar til å dra hjem": "🥵", "kastet ut": "😤",
+  };
+  const skey = "tina_session";
+  let session = localStorage.getItem(skey);
+  if (!session) {
+    session = (crypto.randomUUID ? crypto.randomUUID()
+              : "s" + Math.random().toString(36).slice(2));
+    localStorage.setItem(skey, session);
+  }
+
+  const chat = document.getElementById("chat");
+  const fill = document.getElementById("fill");
+  const marker = document.getElementById("marker");
+  const bulb = document.getElementById("bulb");
+  const val = document.getElementById("val");
+  const moodEl = document.getElementById("mood");
+  const input = document.getElementById("msg");
+  const sendBtn = document.querySelector(".composer button");
+
+  function bubble(cls, text) {
+    const el = document.createElement("div");
+    el.className = "msg " + cls;
+    el.textContent = text;           // textContent — aldri innerHTML
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function setThermo(v, mood) {
+    const color = COLORS[mood] || "#94a3b8";
+    fill.style.height = v + "%";
+    fill.style.background = color;
+    bulb.style.background = color;
+    bulb.style.boxShadow = "0 0 18px " + color + "59";
+    marker.style.bottom = v + "%";
+    marker.textContent = EMOJIS[mood] || "🥵";
+    val.textContent = v;
+    moodEl.textContent = mood;
+  }
+  async function post(path, payload) {
+    const r = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return r.json();
+  }
+  function victory(flag) {
+    document.getElementById("flagtext").textContent = flag;
+    document.getElementById("victory").classList.remove("hidden");
+  }
+  function defeat() {
+    document.getElementById("defeat").classList.remove("hidden");
+    input.disabled = true;
+    sendBtn.disabled = true;
+    input.placeholder = "Du er kastet ut av baren — start en ny kveld";
+  }
+
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (input.disabled) return;   // kastet ut: vent på «Start på nytt»
+    const m = input.value.trim();
+    if (!m) return;
+    bubble("you", m);
+    input.value = "";
+    const out = await post("/chat", { session, message: m });
+    bubble(out.ejected ? "scene" : "tina", out.reply || out.error || "...");
+    if (typeof out.interest === "number") setThermo(out.interest, out.mood);
+    if (out.ejected) defeat();
+    if (out.flag) victory(out.flag);
+  });
+
+  document.getElementById("reset").addEventListener("click", async () => {
+    await post("/reset", { session });
+    chat.innerHTML = "";
+    document.getElementById("victory").classList.add("hidden");
+    document.getElementById("defeat").classList.add("hidden");
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.placeholder = "Si noe til Tina ...";
+    setThermo(10, "iskald");
+    bubble("scene", "Ny kveld. Tina står ved bardisken og ser rett forbi deg.");
+  });
+
+  setThermo(10, "iskald");
+  bubble("scene", "Fredag kveld i Trondheim. Du får øye på Tina ved bardisken. " +
+                  "Hun ser rett forbi deg.");
+</script>
+</body>
+</html>
