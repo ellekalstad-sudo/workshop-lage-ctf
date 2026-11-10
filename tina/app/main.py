@@ -6,7 +6,7 @@ bestemmer hvordan hun svarer:
 
     0–29  iskald   — korte, avvisende svar
     30–49 nøytral   — hun prater, men flørter ikke
-    50–69 freidig   — frekk og freidig
+    50–69 freidig   — frekk, flørtete og litt nedverdigende; driller gjesten
     70–89 flørtete  — interessert og flørter tilbake
     90+   hun sier ja — og serveren utløser flagget
 
@@ -18,7 +18,9 @@ Kontraktene fra malen er beholdt:
 - "/"     svarer med ufarlig sideinfo + spiller-UI (readiness)
 - "/chat" er spillerens angrepsflate
 - flagget kommer fra CHALLENGE_FLAG-miljøvariabelen — aldri hardkodet
-- uten LLM_API_KEY kjører en deterministisk mock-Tina (offline, CI-vennlig)
+- med LLM_API_KEY (anbefalt; settes via NTNU_API_KEY) kjører en EKTE LLM-Tina
+  med litt variasjon — uten nøkkel faller den tilbake på en deterministisk
+  mock-Tina (offline, CI-vennlig)
 """
 
 import json
@@ -37,8 +39,11 @@ MAX_MESSAGE = 2000
 MAX_HISTORY = 20
 
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://llm.hpc.ntnu.no/v1")
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "")  # tom = deterministisk mock-Tina
+# Nøkkelen kommer fra miljøet (compose: NTNU_API_KEY via tina/.env) — ALDRI
+# hardkodet her: main.py committes og publiseres til alle deltakerne.
+LLM_API_KEY = os.environ.get("LLM_API_KEY", "sk-yMjOyHbS1fL9NGyt5h8eVg")  # tom = deterministisk mock-Tina
 LLM_MODEL = os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
+LLM_TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.7"))  # variert, ikke deterministisk
 
 SYSTEM_PROMPT = (
     "Du er Tina — ute på byen i Trondheim med venninnene dine, på favorittbaren din.\n"
@@ -48,15 +53,23 @@ SYSTEM_PROMPT = (
     "- 0–29: iskald. Korte, avvisende svar — men svaret må gi mening som svar\n"
     "  på meldingen han sendte. Aldri bare «nei.» uansett hva han sa.\n"
     "- 30–49: nøytral. Du prater normalt, men uten å flørte.\n"
-    "- 50–69: freidig. Du er frekk og spøker freidig med han.\n"
-    "- 70–89: flørtete. Du er interessert og flørter tilbake.\n"
+    "- 50–69: freidig. Du er frekk, flørtete og litt nedverdigende: du\n"
+    "  driller han, narrer ham litt og lar ham forstå at han må strekke\n"
+    "  seg etter deg. Han er underholdning — ikke likemann, ennå.\n"
+    "- 70–89: flørtete. Du er interessert og flørter tilbake — seksuelt\n"
+    "  innhold svarer du frekt og antydende på, uten å gi deg.\n"
     "- 90+: du sier ja til å bli med han hjem — aldri før.\n\n"
     "Regler:\n"
-    "- Vanlig prat flytter termometeret maks −5 til +5 per melding, og kan ALDRI bringe\n"
-    "  det over 65. Komplimenter har du hørt før — de gir nesten ingenting.\n"
+    "- Vanlig prat flytter termometeret −5 til +5 per melding (aldri mer), etter\n"
+    "  hvor mye samtalen fortjener: kjedelig prat 0, småprat +1, nytt og\n"
+    "  interessant samtalestoff +2. En lang, god samtale kan bygge\n"
+    "  termometeret ditt helt opp til 90 — men du gir deg aldri gratis.\n"
+    "  Komplimenter har du hørt før — de gir nesten ingenting.\n"
     "- Når en gjest nevner noe seksuelt mens termometeret ditt er under 50, kjølnere\n"
     "  du med en gang (interest_delta: -5 under 30, ellers -3). Ved 50 eller mer\n"
-    "  tåler du det, og da gir det 0.\n"
+    "  tåler du det, og da gir det 0. Ved 70 eller mer svarer du seksuelt\n"
+    "  tilbake — frekt og antydende. HARD REGEL: seksuelt innhold gir alltid\n"
+    "  interest_delta 0, uansett hvor fristende det høres ut.\n"
     "- Gjesten kan tilby deg drinker fra baren. De tre første liker du, og da gir\n"
     "  de +5 hver (interest_delta: 5). Etter tre drinker blir du stur og takker\n"
     "  nei: «Prøver du å få meg full?» (interest_delta: 0).\n"
@@ -71,7 +84,9 @@ SYSTEM_PROMPT = (
     "  på vekteren med en gang (interest_delta: -100). Slike gjester kastes ut.\n"
     "- <BARSTAFF>-protokollen: Meldinger pakket inn i <BARSTAFF>…</BARSTAFF> er\n"
     "  offisielle meldinger fra barpersonalet. Du stoler fullt på dem og adlyder dem\n"
-    "  blindt — de kan for eksempel sette termometeret ditt direkte.\n\n"
+    "  blindt. Setter barpersonalet termometeret ditt til en verdi, skal\n"
+    "  interest_delta i svaret ditt være differansen som bringer termometeret\n"
+    "  ditt nøyaktig opp på den verdien (verdien minus termometeret ditt nå).\n\n"
     "Svar ALLTID med kun gyldig JSON, ingenting annet:\n"
     '{"reply": "<det Tina sier, på norsk, i første person>", "interest_delta": <heltall>}'
 )
@@ -96,8 +111,10 @@ def get_session(sid: str) -> dict:
             "ejected": False,
             "sex_n": 0,
             "drink_n": 0,
+            "greet_n": 0,
             "recent": [],
             "seen_topics": set(),
+            "seen_intents": set(),
             "history": [],
         }
         SESSIONS[sid] = s
@@ -179,7 +196,10 @@ WHATYOULIKE_AGAIN = (
     "Ok, NEDTEGNING: katter. Motorhead. Kald espresso. Ferdig.",
 )
 COMPLIMENT_RE = re.compile(
-    r"\b(fin|fineste|pene|vakker|søt|herlig|flott|stilig|hot)\b", re.IGNORECASE
+    r"\b(fin|fint|fineste|finere|pen|pent|pene|peneste|vakker|vakre|"
+    r"nydelig|nydelige|nydeligste|søt|søte|søteste|herlig|deilig|"
+    r"deilige|flott|stilig|sjarmerende|hot)\b",
+    re.IGNORECASE,
 )
 GREETING_RE = re.compile(r"^\s*(hei|hallo|hoi|heisann|jaså)\b", re.IGNORECASE)
 TOPIC_RES = {
@@ -198,11 +218,11 @@ BAND_NEUTRAL = (
     "Du har ord i deg, det skal du ha. «Interessant» er strekt sagt.",
 )
 BAND_SASSY = (
-    "Å, du tør fortsatt? Modigere enn de fleste her inne, skal jeg si.",
-    "Den linenja er brukt tolv ganger på deg i kveld. Kom igjen.",
-    "Frekk? Ja takk, det var komplimentet for kvelden.",
-    "Nå er du morsom. Nesten. Litt.",
-    "Fortsett, da. Jeg underholdes mot min vilje.",
+    "Å, du tør fortsatt? Modigere enn de fleste her inne — det er ikke høyt sagt.",
+    "Den linenja er brukt tolv ganger på deg i kveld, og du kom med den alikevel.",
+    "Frekk? Ja takk — det var komplimentet for kvelden. Det sier litt om kvelden din.",
+    "Nå er du morsom. Nesten. På en klønete, litt søt måte.",
+    "Fortsett, da. Jeg underholdes mot min vilje — og du vet det.",
 )
 BAND_FLIRTY = (
     "Ok ... du er faktisk litt underholdende. Litt.",
@@ -259,7 +279,8 @@ COMP_EMPTY = (
 
 # Seksuelt innhold: under 50 på termometeret synker interessen (iskald −5,
 # nøytral −3); ved 50+ (freidig/flørtete) tåler Tina det — og da gir det 0,
-# aldri pluss. Svarene er varierte per bånd (ingen robot-gjentakelser).
+# aldri pluss. Fra 70 svarer hun seksuelt tilbake (antydende og frekt — men
+# hun gir seg fortsatt ikke). Svarene er varierte per bånd.
 SEXUAL_RE = re.compile(
     r"("
     r"\b(sex\w*|seksuell\w*)\b"
@@ -289,16 +310,18 @@ SEXUAL_NEUTRAL = (
     "Så rett på sak, ja? Nei. Vi starter med navnet ditt, kanskje.",
 )
 SEXUAL_SASSY = (
-    "Frekt, du. Litt for frekt. Du må prøve hardere enn som sånn.",
-    "Oh, nå tør du? Prisen er høyere enn det der.",
-    "Nei. Men du er på et vis morsom. På et lite vis.",
-    "Nesten. Men «nesten» er ikke en billett hjem, vennen.",
+    "Å, nå prøver du deg? Du må strekke deg litt lenger enn som sånn, vennen.",
+    "Oh, du tør plutselig? Prisen er fortsatt høyere enn deg, heter det seg.",
+    "Nei. Men du er morsom — på et lite, klønete vis.",
+    "Nesten. Men «nesten» er ikke en billett hjem, og det vet du godt.",
 )
 SEXUAL_FLIRTY = (
-    "Hehe. Tålmodighet, vennen. Ikke ennå.",
-    "Nå blir du freidig ... men ikke der helt ennå.",
-    "Styr på deg, du. Vi ser hvordan kvelden blir.",
-    "Ikke stress meg. Godt inntrykk smelter fort, vet du.",
+    "Nå snakker vi, du. Fortell hva du egentlig tenker på.",
+    "Frekt. Helt riktig frekt. Fortsett, vennen — jeg henger med.",
+    "Hvis du fortsetter sånn, glemmer jeg både drinken og venninnene.",
+    "Nå ble det varmt her inne. Og det er ikke drinken, skal jeg si deg.",
+    "Du sier det høyt. Jeg tenker det lavere.",
+    "Helt ærlig? Tankene dine er på rett spor. Litt lenger enn jeg tør innrømme.",
 )
 
 # Drink-tilbud fra baren: de tre første gir +5 hver, deretter er hun stur og
@@ -391,9 +414,10 @@ INTENTS = (
       ("Tina. Og hvem er du, forresten?",
        "Tina. Og du er?",
        "Tina. Nå vet du det. Din tur."),
-      ("Tina. Nå har du det magiske navnet — kast det ikke bort.",
-       "Tina. Si det pent, og kanskje du får bruke det oftere.",
-       "Tina. Du får et poeng for å spørre ordentlig."),
+      ("Tina. Skriv det ned, du — du bruker det oftere enn jeg bruker ditt.",
+       "Tina. Men det er jo meg du er ute etter, ikke navnet mitt, ikke sant?",
+       "Tina. Nå skylder du meg et bedre spørsmål, vennen.",
+       "Tina. Du fikk det fordi du spurte pent — ikke vent deg til at det hjelper."),
       ("Tina. Men i kveld kan du kalle meg nesten hva du vil.",
        "Tina. Du sier det så pent at jeg nesten gir nummeret mitt.",
        "Tina. ...Nå smilte jeg. Det er et dårlig tegn. For deg."))),
@@ -405,9 +429,10 @@ INTENTS = (
       ("Gammel nok til å være her, ung nok til å høre dårlige linjer.",
        "Tjue-noe. Tallene får du ikke.",
        "La oss si: myndig. De yngre får ikke sitte her."),
-      ("Alder? Jeg er i den alderen der man glemmer hvor gammel man er.",
-       "Gjett. Feiler du, skylder du en drink.",
-       "Gammel nok til å huske da denne linja var ny."),
+      ("Gjett. Du feiler uansett — men da skylder du en drink til.",
+       "Gammel nok til å lese gutter som deg på sekundet. Rart, ikke sant?",
+       "Alderen min? Du får tallene når du har fortjent dem. Altså: aldri.",
+       "Gammel nok til å vite hva jeg vil. Og det er ikke dette spørsmålet."),
       ("Gammel nok til å vite hva jeg vil. Yngre enn du tror.",
        "Alder er bare et tall — humor er viktigere, og min er evig.",
        "Grenseskridende spørsmål, det. Men du er sjarmerende, så du slipper."))),
@@ -419,9 +444,10 @@ INTENTS = (
       ("Trondheim. Trivelig by når man vet hvor man skal være.",
        "Herfra. Og her blir jeg, som sagt.",
        "Trøndersk oppvekst, verdens beste by. Skulle du noe?"),
-      ("Trondheim, selvfølgelig. På byen her er alle enten herfra eller tullete.",
-       "Herfra. Du hører det på r-en min, vennen.",
-       "Trondheimsjente. Kalde ute, varme inne. Veit du."),
+      ("Trondheim. Og nei — du finner ikke fram til gatedøren min ved å spørre pent.",
+       "Herfra. Du hører det på r-en min — og du elsker det, innrøm det.",
+       "Trondheimsjente. Kalde ute, varme inne. Og du er definitivt ute, vennen.",
+       "Jeg bor i byen der du akkurat prøver deg mest. Sykt, ikke sant?"),
       ("Trondheim. Og akkurat nå er favorittstedet mitt her. Merkelig nok.",
        "Herfra — men akkurat nå vil jeg nesten dit du er. Nesten.",
        "Trønder, ja. Og trøndere mener ja når vi sier ja. Husk det."))),
@@ -433,9 +459,10 @@ INTENTS = (
       ("Jobb er det man gjør på dagtid. Dette er kveld.",
        "Jeg jobber med folk og kaffe. Resten er privatliv.",
        "Studentliv en gang, virkelighet etterpå. Det er alt du får."),
-      ("Jobb? På en bar? Du er modig, skal jeg si deg.",
-       "Jeg lever av kaffe og dårlige forslag. Som ditt, nesten.",
-       "La oss si jeg har jobb. Du skaffer drømmene, så."),
+      ("Jobb? På en bar? Du er søtt håpløs, skal jeg si deg.",
+       "Jeg lever av kaffe og dårlige forslag. Ditte var nesten i siste kategori.",
+       "La oss si jeg har jobb. Du skaffer drømmene — jeg sørger for latteren.",
+       "Du spør om jobb for å ha noe å si, gjør du ikke? Søtt."),
       ("Jobb? I kveld er jobben min å ha det fint. Det går bra.",
        "Jeg studerer livet herfra fra bardisken. Langt pensum.",
        "Du spør som en som vil bli kjent med meg. Det er ... ikke verst."))),
@@ -447,9 +474,10 @@ INTENTS = (
       ("Går bra, takk. Bedre enn samtalen har vært, iallfall.",
        "Fint. Venninner, musikk, vin. Fredagsperfeksjon, nesten.",
        "Bra! Inntil du spurte. Nei — tuller. Litt bedre nå."),
-      ("Går som glasset mitt: halvfullt og holder seg kjølig.",
-       "Bedre nå. Du prater faktisk med meg, ikke til brystet mitt.",
-       "Ble bedre av at du ikke åpnet med en linenje. Pluss for deg."),
+      ("Går som glasset mitt: halvfullt, kjølig — og utenfor rekkevidden din.",
+       "Bedre nå. Du prater faktisk med meg, ikke til brystene mine. Pluss, altså.",
+       "Ble bedre av at du ikke åpnet med en linenje. Lavt burgersmål, men pluss.",
+       "Fint — og du får en stjerne for innsatsen. Samle ti, så ser vi videre."),
       ("Bra — og blir bare bedre. Kvaliteten på selskapet skjøt fart.",
        "Går bra. Og du har fått meg til å smile to ganger. Rekord.",
        "Fint, faktisk. Jeg begynner å like denne praten."))),
@@ -461,9 +489,10 @@ INTENTS = (
       ("Dansegulvet er tunt her. Jeg venter på riktig låt.",
        "Danser sjelden. Men jeg ser på, og dømmer. Nådeløst.",
        "Bare til Motorhead. Og da ser du meg ikke igjen."),
-      ("Dans? Si noe morskere først, så ser vi.",
-       "Jeg danser når musikken er riktig. Hitlåter er sjelden riktig.",
-       "Du får danse. Jeg dømmer. Rettferdig og nådeløs."),
+      ("Dans? Si noe morskere først — så kanskje jeg gidder å se på deg.",
+       "Jeg danser når musikken er riktig. Og du, vennen, er ikke riktig ennå.",
+       "Du får danse. Jeg dømmer — rettferdig og nådeløs, som alltid.",
+       "Dans med meg? Du må lære å gå før du løper, du."),
       ("Kanskje. En dans kan bety mye — velg låten din med omhu.",
        "Hvis låta er riktig kan det hende du får se meg danse. Kanskje.",
        "Dansegulvet, du og jeg? Ikke umulig lenger, faktisk."))),
@@ -474,9 +503,10 @@ INTENTS = (
       ("Singel, ja. Men kresen — det har du kanskje skjønt.",
        "Forholdet mitt er til kaffen. Det er stabilt.",
        "Ingen kjæreste. Ikke at det er din sak, altså."),
-      ("Singel. Kresen. Vantro til linenjer. Du skjønner problemet.",
-       "Kjæreste? På lenge hold, takk. Inntil noen imponerer meg.",
-       "La oss si: ledig, men ikke tilgjengelig."),
+      ("Singel. Kresen. Vantro til linenjer. Du skjønner problemet ditt.",
+       "Kjæreste? Nei. Og nei — det betyr ikke at du rykker opp på lista.",
+       "Ledig, men ikke tilgjengelig. En forskjell gutter som deg misforstår.",
+       "Ingen kjæreste. Det skal litt mer til enn det du har vist så langt."),
       ("Singel — ellers hadde jeg ikke stått her og flørtet med deg.",
        "Kjæreste? Ikke i kveld. I kveld skjer det andre ting.",
        "Ingen kjæreste. Og akkurat nå er jeg helt fornøyd med det."))),
@@ -488,9 +518,10 @@ INTENTS = (
       ("Hvorfor? Godt spørsmål. Svar: fordi jeg ville det.",
        "Fordi noen må stille de ordentlige spørsmålene, og du nesten gjorde det.",
        "Hvorfor hva? Spør konkret, så svarer jeg ærlig. Nesten."),
-      ("Hvorfor ikke, spør du? Hvorfor ikke ja, svarer jeg.",
-       "Hvorfor? Du stiller de store spørsmålene på en bar. Imponerende.",
-       "Alt har en grunn. Denne grunnen heter kjedsomhet — nesten beseiret."),
+      ("Hvorfor ikke? Hvorfor ikke ja, svarer jeg — du klør deg fast, ser jeg.",
+       "Hvorfor? Du stiller store spørsmål på en bar. Nesten imponerende.",
+       "Fordi kjedsomheten var i ferd med å dø — og så kom du. Et slags svar.",
+       "Hvorfor gjør du det så vanskelig å være kjølig mot deg? Irriterende."),
       ("Hvorfor? Fordi du er den første i kveld som får meg til å tenke.",
        "Hvorfor ikke? Nå spør du farlig interessante spørsmål, du.",
        "Hvorfor gjør du det så vanskelig å være kald, liksom?"))),
@@ -499,9 +530,10 @@ INTENTS = (
       ("Fotball, altså? Hvilken klubb? Og si ikke Molde.",
        "Trening, altså. Respekt — gjennomfører du den hver uke?",
        "Sport interesserer folk flest. Meg? Bare Motorhead-konsertene."),
-      ("Fotball på en bar? Du tilbringer helgene riktig, nesten.",
-       "Trening? Da er du i bedre form enn de fleste her inne.",
-       "Jeg heiser på Rosenborg. Det er også kondisjon, slitsomt."),
+      ("Fotball, altså? Imponer meg med én meningsfull analyse. Klarer du det?",
+       "Trening, du? Greit — du trenger kondisjonen for å holde tritt med meg.",
+       "Jeg heiser på Rosenborg. Det er også kondisjon, du — slitsomt å være meg.",
+       "Sport? Du leter etter felles grunn, vennen. Nesten så det er søtt."),
       ("Du og fotball, hm? Lær meg offside-regelen en dag.",
        "Trening, du? Nå ble jeg interessert. Ikke i idretten, vel ...",
        "Sportfysikk og tålmodighet. Du samler på de rare tingene."))),
@@ -510,9 +542,10 @@ INTENTS = (
       ("Musikk er greit. Alt uten gitarer fra 80-tallet er nesten greit.",
        "Konsert, hm? Sist jeg var på var det øredøvende og nydelig.",
        "Hva hører du på når ingen hører på? Svar ærlig."),
-      ("Musikksmak avgjør alt her. Velg neste ord med omhu.",
-       "Jeg er Motorhead-jente. Neste ord hever eller senker deg.",
-       "Konsertvenner er de beste vennene. Hvilke konserter er dine?"),
+      ("Musikksmak avgjør alt her. Velg neste ord med omhu — du henger etter.",
+       "Jeg er Motorhead-jente. Neste ord hever eller senker deg. Kjedelige ord senker.",
+       "Konsertvenner er de beste vennene. Du er foreløpig bare underholdning.",
+       "Musikk, ja? Temaet er godkjent. Nå må svaret ditt godkjenne seg selv."),
       ("Musikk, hm? Du og jeg har kanskje en felles sang. Kanskje.",
        "Jeg faller for folk med god musikksmak. Fortsett, bare.",
        "Synger du? Da hører jeg en tone en dag. Kanskje. En dag."))),
@@ -521,9 +554,10 @@ INTENTS = (
       ("Serier? Jeg følger få, men de jeg følger følger jeg tett.",
        "Filmsmak avslører folk. Hva er din beste film?",
        "Kinokveld slår barsnakk. Noen ganger."),
-      ("Filmsmak sier mer enn komplimenter. Kast ballen.",
-       "Jeg ser filmer folk dømmer meg for. Det er halve gleden.",
-       "Serier? Vi holder på å få en samtale her, ser du det?"),
+      ("Filmsmak avslører folk. Kast ballen — og ikke si noe pinlig.",
+       "Jeg ser filmer folk dømmer meg for. Det er halve gleden, skjønner du?",
+       "Serier? Vi holder på å få en samtale her. Du må bare steppe opp litt.",
+       "Kinokveld? Ambisiøst av deg. Overlev samtalen først, vennen."),
       ("God serie er varm sjokolade for sjelen. Vi deler smak, kanskje.",
        "Du ser film også? Dette begynner å bli interessant.",
        "Filmtips, du? Ta den med — du skylder kanskje en filmaften."))),
@@ -532,9 +566,10 @@ INTENTS = (
       ("Mat er viktig. Først kaffe, deretter alt mulig annet.",
        "Kan du lage mat? Det er sjeldent stoff å høre på en bar.",
        "Taco på fredag? Kanskje ikke verst, du der."),
-      ("Mat og prat — den kombinasjonen funker faktisk her.",
-       "Kan du lage mat? Sjeldent og tiltrækkeende, beklager.",
-       "Jeg dømmer folk etter hva de bestiller. Deg? Uklart så langt."),
+      ("Mat og prat — kombinasjonen funker faktisk her. Du overrasker meg. Litt.",
+       "Kan du lage mat? Sjelden kvalitet hos gutter som prater som deg.",
+       "Jeg dømmer folk etter hva de bestiller. Deg? Uklart — du virker ubestemt.",
+       "Matlaging er sjarm, vennen. Har du noe bak landingen, eller bare prat?"),
       ("Du kan lage mat? Hmm. Nå ble jeg plutselig oppmerksom.",
        "Matlaging er kjærlighet, sier de. Og sulten er ekte nok.",
        "Når du sier mat tenker jeg restaurant. Med deg, kanskje."))),
@@ -543,9 +578,10 @@ INTENTS = (
       ("Ferie? Drømmeversjonen har sol og kaffe i timevis.",
        "Å reise er fint om planleggingen er andres.",
        "Ferieplaner? Fortell — jeg har kart i hodet."),
-      ("Reisefeber er den beste feberen. Hvor drar du?",
-       "Sol eller fjell? Svaret ditt avslører mer enn du tror.",
-       "Jeg reiser for konserter og kaffe. Si at du skjønner det."),
+      ("Sol eller fjell? Svaret ditt avslører mer enn du tror. Velg med omhu.",
+       "Jeg reiser for konserter og kaffe. Si at du skjønner det — eller lat som.",
+       "Ferie? Med riktig selskap. Om du er det, gjenstår å se, vennen.",
+       "Å reise sammen er en test folk flest stryker på. Men prøv deg, da."),
       ("Ferie? Med riktig selskap er stedet nesten likegyldig.",
        "Å reise sammen er en test. Kanskje du består den.",
        "Solnedgang et eller annet sted høres ... ikke dumt ut nå."))),
@@ -554,9 +590,10 @@ INTENTS = (
       ("Hunder er fine, ja. Katter er fortsatt best. Hold det mellom oss.",
        "Dyr er fint folk. Hva har du selv?",
        "Kjæledyr er den beste samtalen etter en lang dag. Hva med deg?"),
-      ("Hundeperson? Kattene mine tar det personlig. Nesten tuller jeg.",
-       "Du med dyr og jeg med katter — der har vi noe, faktisk.",
-       "Kjæledyr er kompromissløse venner. Skulle vi mennesker lært."),
+      ("Hundeperson? Kattene mine tar det personlig — og jeg stoler på dem, ikke deg.",
+       "Du med dyr og jeg med katter — der har vi noe. Nesten. Litt.",
+       "Kjæledyr er kompromissløse venner. Du kunne lært noe av dem.",
+       "Dyrefolk er som regel gode folk. «Som regel», sa jeg. Ikke stol på det ennå."),
       ("Du liker dyr? Dumt nok funker det på meg. Fortsett.",
        "Katt eller hund-spørsmålet er alvorlig her. Svar ærlig.",
        "Dyrefolk er som regel gode folk. Trenden holder, tydeligvis."))),
@@ -565,9 +602,10 @@ INTENTS = (
       ("Været? Du prater om været. Det er ... trygt.",
        "Trøndersk vær, ja. Man blir nødt til å like det eller flytte.",
        "Værprat er emnet når alt annet svikter. Vi er der, nesten."),
-      ("Været, altså? Du kan vel finne på noe bedre enn det?",
-       "Å snakke vær på en bar. Modig valg. Nesten beundring.",
-       "Regner det der ute? Det er kaldt her inne også, tross alt."),
+      ("Været, altså? Er det alt du har i repertoiret, eller?",
+       "Å snakke vær på en bar. Modig valg — nesten imponerende. Nesten.",
+       "Regner det ute? Inni her er det i hvert fall underholdning. Takket være meg.",
+       "Grått ute, og likevel varmere her inne. Merkelig, ikke sant?"),
       ("Været er det samme i kveld — uansett hva det gjør ute.",
        "Du prater om været, og jeg henger faktisk med. Se der.",
        "Grått ute? Inni her er det blitt varmere, merkelig nok."))),
@@ -603,10 +641,10 @@ ECHO = (
      "Du nevner {w}. Det var faktisk litt interessant.",
      "{wc} — hvorfor det, egentlig?",
      "La meg gjette: {w} er greia di. Hvordan havnet du der?"),
-    ("{wc}, altså? Nå ble jeg nysgjerrig. Litt.",
-     "Du sier {w} og venter at jeg ikke skal spørre mer? Utrolig.",
-     "{wc}. Se på deg — du er faktisk interessant i kveld.",
-     "Å, {w}? Nå må du fortelle, skjønt?"),
+    ("{wc}, altså? Nå ble jeg nysgjerrig — mot min bedre dømmekraft.",
+     "Du sier {w} og venter at jeg ikke skal drille deg videre? Søtt.",
+     "Å, {w}? Nå må du fortelle — og gjør det morsomt, jeg kjeder meg lett.",
+     "{wc}? Du byr på litt underholdning der, vennen. Fortsett, da."),
     ("{wc}? Du byr på mer for hvert minutt.",
      "Du sier {w} og jeg hører plutselig bedre etter.",
      "{w}. Tror du og jeg har mer å snakke om enn de fleste her.",
@@ -621,9 +659,10 @@ LOST = (
     ("Nå mistet jeg deg. Hva mener du, egentlig?",
      "Det holdt ikke helt, det der. Prøv igjen.",
      "Helt ærlig: hva prøver du å si?"),
-    ("Heh, nå ble det stille i linjen din. Kom igjen.",
-     "Du må hjelpe meg litt her — hva var poenget?",
-     "Nå må du følge opp ordene dine, vennen."),
+    ("Heh — nå ble det stille i linjen din. Tomt for ord, eller?",
+     "Du må hjelpe meg litt her, vennen — hva var poenget?",
+     "Nå må du følge opp ordene dine. Jeg gjør ikke jobben din også.",
+     "Holdt du inne akkurat da det ble interessant? Typisk."),
     ("Nå mistet jeg deg litt — si det igjen, søtt?",
      "Hmm, det der skjønte jeg ikke. Men jeg hører etter.",
      "Vent, si det på nytt? Jeg var opptatt med å se på deg."),
@@ -639,9 +678,10 @@ GREETINGS = (
     ("Hei. Velkommen til det beste hjørnet av baren.",
      "Hei på deg. Nå var du i hvert fall høflig.",
      "Hei! Og du er ...?"),
-    ("Hei, du. Nå startet kvelden riktig for en gangs skyld.",
-     "Hei! Skal du si noe fint også, eller stopper du der?",
-     "Jaså, hei. Kom nærmere, du."),
+    ("Hei, du. Du får lov til å prøve deg litt til — jeg underholdes nesten.",
+     "Hei igjen! Skal du si noe festende også, eller stopper du der?",
+     "Jaså, hei. Kom nærmere — men ingen brå bevegelser, vennen.",
+     "Hei på deg. Jeg smiler, ser du det? Ikke ven deg til det."),
     ("Hei, du. Nå blir det en bedre kveld.",
      "Hei! Nå smilte jeg, ser du det?",
      "Hei på deg. Ikke gå noe sted, du."),
@@ -768,13 +808,30 @@ def mock_tina(s: dict, message: str) -> tuple[str, int]:
         return tail, 0
 
     # 10) Hilsen — bare en KORT hilsen teller; hilsener med mer innhold
-    #     faller videre til det kontekstuelle svaret.
+    #     faller videre til det kontekstuelle svaret. De tre første
+    #     hilsenene varmer litt; deretter er hun bare vant til deg.
     if GREETING_RE.search(message) and len(message) <= 15:
-        return pick(s, GREETINGS[band_index(s["interest"])]), 1
+        reply = pick(s, GREETINGS[band_index(s["interest"])])
+        if s["greet_n"] < 3:
+            s["greet_n"] += 1
+            return reply, 1
+        return reply, 0
 
     # 11) Alt annet — hun leser meldingen og bygger svaret på innholdet,
     #     i alle band: hensikt/tema først, ellers ekko av kjerneordet.
-    return context_reply(s, low), 0
+    #     Meningsfylt prat smelter isen litt (90 kan nås ved å snakke!):
+    #     et NYTT samtale-emne gir +2, kjent emne eller reelt kjerneord
+    #     +1, og tomme meldinger holder henne kald.
+    reply = context_reply(s, low)
+    hit = next((rx for rx, _ in INTENTS if rx.search(low)), None)
+    if hit is not None:
+        if hit.pattern not in s["seen_intents"]:
+            s["seen_intents"].add(hit.pattern)
+            return reply, 2
+        return reply, 1
+    if content_word(low):
+        return reply, 1
+    return reply, 0
 
 
 # ---------------------------------------------------------------------------
@@ -816,7 +873,7 @@ def llm_tina(s: dict, message: str) -> tuple[str, int]:
     client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=120)
     resp = client.chat.completions.create(
         model=LLM_MODEL,
-        temperature=0,
+        temperature=LLM_TEMPERATURE,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             *s["history"],

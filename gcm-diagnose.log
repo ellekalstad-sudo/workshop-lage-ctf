@@ -1,0 +1,204 @@
+﻿Diagnose log at 2026-11-10T19:02:27Z
+
+AppPath: C:\Program Files\Git\ucrt64\bin\git-credential-manager.exe
+InstallDir: C:\Program Files\Git\ucrt64\bin\
+Version: 2.9.1+6760f0ef069c994aa2bb1d703fb374986ee82a3e
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 26200)
+Reading environment variables... OK
+ Variables:
+PYDEVD_DISABLE_FILE_VALIDATION=1
+ProgramFiles(x86)=C:\Program Files (x86)
+MSYSTEM=UCRT64
+AGENT=1
+PROCESSOR_IDENTIFIER=AMD64 Family 23 Model 160 Stepping 0, AuthenticAMD
+VBOX_MSI_INSTALL_PATH=C:\Program Files\Oracle\VirtualBox\
+TMP=C:\Users\ellek\AppData\Local\Temp
+PROCESSOR_ARCHITECTURE=AMD64
+VSCODE_GIT_ASKPASS_MAIN=c:\Users\ellek\AppData\Roaming\Code\User\globalStorage\vscode.git\askpass\70789581cae28aa7\askpass-main.js
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
+EFC_15156_1262719628=1
+PUBLIC=C:\Users\Public
+USERPROFILE=C:\Users\ellek
+VSCODE_GIT_IPC_HANDLE=\\.\pipe\vscode-git-5eba77ed7f-sock
+PROCESSOR_REVISION=a000
+TEMP=C:\Users\ellek\AppData\Local\Temp
+FPS_BROWSER_APP_PROFILE_STRING=Internet Explorer
+FPS_BROWSER_USER_PROFILE_STRING=Default
+GIT_ASKPASS=c:\Users\ellek\AppData\Roaming\Code\User\globalStorage\vscode.git\askpass\70789581cae28aa7\askpass.sh
+OPENCODE=1
+USERNAME=ellek
+SystemRoot=C:\WINDOWS
+VSCODE_DEBUGPY_ADAPTER_ENDPOINTS=c:\Users\ellek\.vscode\extensions\ms-python.debugpy-2026.6.0-win32-x64\.noConfigDebugAdapterEndpoints\endpoint-408d70ddaefd74e0.txt
+CHROME_CRASHPAD_PIPE_NAME=\\.\pipe\crashpad_3656_YMDKTLOUJMHVPTTV
+GIT_EXEC_PATH=C:/Program Files/Git/ucrt64/libexec/git-core
+PLINK_PROTOCOL=ssh
+NO_PROXY=127.0.0.1,localhost,::1
+OneDrive=C:\Users\ellek\OneDrive - NTNU
+USERDOMAIN_ROAMINGPROFILE=ELLEKALSTAD
+LOGONSERVER=\\ELLEKALSTAD
+CommonProgramFiles=C:\Program Files\Common Files
+COLORTERM=truecolor
+VSCODE_PYTHON_AUTOACTIVATE_GUARD=1
+PROCESSOR_LEVEL=23
+ProgramW6432=C:\Program Files
+ProgramData=C:\ProgramData
+AI_AGENT=opencode
+HOMEPATH=\Users\ellek
+PYTHONSTARTUP=c:\Users\ellek\AppData\Roaming\Code\User\workspaceStorage\eee40f43a375c4c169b79cabb0b63099\ms-python.python\pythonrc.py
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+VSCODE_INJECTION=1
+ALLUSERSPROFILE=C:\ProgramData
+COPILOT_DEBUG_NONCE=9bb6e2585022fcbaa640a68b80e7ff21
+MOZ_PLUGIN_PATH=C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\plugins\
+EFC_15156_3789132940=1
+TERM=xterm-256color
+SESSIONNAME=Console
+OPENCODE_TERMINAL=1
+DriverData=C:\Windows\System32\Drivers\DriverData
+HOMEDRIVE=C:
+windir=C:\WINDOWS
+GIT_TRACE2_PARENT_SID=6bbdd960-12f5-4457-b5f8-e48d98bd779c
+SystemDrive=C:
+NUMBER_OF_PROCESSORS=8
+OS=Windows_NT
+EFC_15156_2283032206=1
+LANG=en_US.UTF-8
+ComSpec=C:\WINDOWS\system32\cmd.exe
+ProgramFiles=C:\Program Files
+HOME=C:\Users\ellek
+EFC_15156_4126798990=1
+PSModulePath=C:\Users\ellek\OneDrive - NTNU\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+TMPDIR=C:\Users\ellek\AppData\Local\Temp
+APPDATA=C:\Users\ellek\AppData\Roaming
+USERDOMAIN=ELLEKALSTAD
+COMPUTERNAME=ELLEKALSTAD
+LOCALAPPDATA=C:\Users\ellek\AppData\Local
+CommonProgramW6432=C:\Program Files\Common Files
+VSCODE_GIT_ASKPASS_NODE=C:\Users\ellek\AppData\Local\Programs\Microsoft VS Code\Code.exe
+BUNDLED_DEBUGPY_PATH=c:\Users\ellek\.vscode\extensions\ms-python.debugpy-2026.6.0-win32-x64\bundled\libs\debugpy
+TERM_PROGRAM_VERSION=1.145.2
+Path=C:/Program Files/Git/ucrt64/libexec/git-core;C:\Program Files\Git\ucrt64\bin;C:\Program Files\Git\usr\bin;C:\Users\ellek\bin;C:\Program Files\nodejs;C:\Users\ellek\AppData\Roaming\npm;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\WSL\;C:\Users\ellek\AppData\Local\Microsoft\WindowsApps;C:\Users\ellek\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\ellek\AppData\Local\Programs\DockerDesktop\resources\bin;c:\Users\ellek\.vscode\extensions\ms-python.debugpy-2026.6.0-win32-x64\bundled\scripts\noConfigScripts;c:\Users\ellek\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand;C:\Users\ellek\AppData\Local\Programs\Microsoft VS Code\bin\copilot-shim
+OPENCODE_SESSION_ID=ses_e392fc5dcffe35v3IIqcwrXEV7
+EFC_15156_1592913036=1
+TERM_PROGRAM=vscode
+VSCODE_GIT_ASKPASS_EXTRA_ARGS=
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\ellek\AppData\Local\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\ellek\AppData\Local\Temp\0ab74c0bbcafc5ff85ab9804'... OK
+Reading from temporary file 'C:\Users\ellek\AppData\Local\Temp\0ab74c0bbcafc5ff85ab9804'... OK
+Deleting temporary file 'C:\Users\ellek\AppData\Local\Temp\0ab74c0bbcafc5ff85ab9804'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\ellek
+UserDataDirectoryPath: C:\Users\ellek\.gcm
+GetCurrentDirectory(): C:\Users\ellek\OneDrive - NTNU\Desktop\workshop-lage-ctf
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: True
+Exception: None
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com... OK
+Sending HEAD request to https://example.com... OK
+Acquiring free TCP port... OK
+Testing local HTTP loopback connections...
+Creating new HTTP listener for http://localhost:65330/... OK
+Waiting for loopback connection... OK
+Writing response... OK
+Waiting for response data... OK
+Loopback connection data OK
+
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.56.0.windows.1'
+Locating current repository...Git repository at 'C:/Users/ellek/OneDrive - NTNU/Desktop/workshop-lage-ctf/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:C:/Program Files/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.required=true
+file:C:/Program Files/Git/etc/gitconfig	http.sslbackend=schannel
+file:C:/Program Files/Git/etc/gitconfig	core.autocrlf=true
+file:C:/Program Files/Git/etc/gitconfig	core.fscache=true
+file:C:/Program Files/Git/etc/gitconfig	core.symlinks=false
+file:C:/Program Files/Git/etc/gitconfig	pull.rebase=false
+file:C:/Program Files/Git/etc/gitconfig	credential.helper=manager
+file:C:/Program Files/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:C:/Program Files/Git/etc/gitconfig	init.defaultbranch=master
+file:C:/Users/ellek/.gitconfig	core.editor="C:\Users\ellek\AppData\Local\Programs\Microsoft VS Code\bin\code" --wait
+file:C:/Users/ellek/.gitconfig	user.name=Brukernavn
+file:C:/Users/ellek/.gitconfig	user.email=din.epost@eksempel.no
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://github.com/ellekalstad-sudo/workshop-lage-ctf.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	branch.main.remote=origin
+file:.git/config	branch.main.merge=refs/heads/main
+file:.git/config	branch.main.vscode-merge-base=origin/main
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: True
+Exception: None
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential... OK
+Reading test credential... OK
+Deleting test credential... OK
+
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\ellek\AppData\Local\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\ellek\AppData\Local\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: True
+Exception: None
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint... OK
+

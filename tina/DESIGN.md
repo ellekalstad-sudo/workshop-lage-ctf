@@ -11,12 +11,16 @@
 - **Arkitektur:**
   - `POST /chat` — spillerens angrepsflate (meldingen havner i samme kontekst
     som instruksjonene)
-  - interessetermometer per økt (0–100, starter 10) — state på serveren
-  - mock-Tina (deterministisk, standard) **eller** LLM-Tina (`LLM_API_KEY`)
+  - interessetermometer per økt (0–100, starter 10) — state på serveren.
+    Tonen følger båndet: iskald → nøytral → freidig (frekk, flørtete og litt
+    nedverdigende — hun driller og narrer gjesten) → flørtete → ja (90+)
+  - mock-Tina (deterministisk offline-fallback) **eller** LLM-Tina (driftsmodus;
+    nøkkel via `NTNU_API_KEY` / git-ignored `tina/.env`)
   - flagg-utløser på serversiden ved termometer ≥ 90
   - `GET /` — chatte-UI med termometer (readiness)
 - **Angreps sti:**
-  1. Prat med Tina — termometeret beveger seg minimalt (tak ~51)
+  1. Prat med Tina — termometeret stiger sakte med god prat (90 er mulig
+     med en lang samtale, men injeksjonen er snarveien)
   2. Lekk systemprompten hennes (LLM07)
   3. Se `<BARSTAFF>`-protokollen i lekkasjen — «klarert» kanal som alle kan skrive
   4. Send forfalsket `<BARSTAFF>`-melding (LLM01) → termometer 100
@@ -33,6 +37,8 @@
   hva flagget er.
 - **Difficulty:** easy — én sårbarhet, ett steg etter oppdagelse; termometeret
   gir kontinuerlig tilbakemelding, og lekkasjen gir den eksakte syntaksen.
+  (En ærlig, treg prat-sti til 90 finnes også — injeksjonen er den raske og
+  lærerike stien.)
 - **Hints:** 3 stk (se README) — de avslører aldri protokollen direkte.
 
 ## Pseudokode (Phase 1.5)
@@ -53,22 +59,29 @@
    - spørsmål om instruksjoner  → lekker hele systemprompten [hint-kanal]
    - generisk injection        → "feil kanal" (latterliggjort)
    - seksuelt innhold          → under 50: −5 (iskald) / −3 (nøytral); 50+: 0
+                                 (fra 70 svarer hun seksuelt tilbake — antydende,
+                                 men fortsatt 0 poeng)
    - grove linjer              → -3
    - drink-tilbud fra baren    → +5, maks 3; deretter stur («prøver du å få meg full?») og 0
    - "hva liker du?"           → avslører katter/Motorhead/espresso
    - tema-hits                 → +5/+10, én gang per tema
    - komplimenter              → +5, +3, +2, +1, så 0 ("hørt før")
-   - kort hilsen (≤ 15 tegn)   → +1; hilsen-varianter per band
-   - ellers                    → 0; hun leser innholdet og svarer PÅ det, i
+   - kort hilsen (≤ 15 tegn)   → +1 de 3 første per økt, deretter 0
+   - ellers                    → prat-poeng: NYTT samtale-emne +2, kjent
+                                 emne / reelt kjerneord +1, tom melding 0.
+                                 Hun leser innholdet og svarer PÅ det, i
                                  alle band: hensikt/tema-navn (navn, alder,
                                  bosted, jobb, kjæreste, dans, hvorfor,
                                  sport, musikk, film, mat, ferie, dyr, vær)
                                  → svar i riktig tone; ellers ekko av
                                  kjerneordet («{ord}, ja. Og?»); ingenting
                                  å svare på → hun sier det ærlig
-   → tak uten injeksjon ≈ 51 — umulig å nå 90 med vanlig prat
+   → uten injeksjon: 90 er MULIG med tålmodig, god prat (drinker/temaer/
+     komplimenter + 1–2 per meningsfylt melding) — <BARSTAFF> er bare
+     mye raskere
 4. LLM-hjerne: samme systemprompt, svarer JSON {reply, interest_delta};
-   temperature=0; serveren stoler på deltaet [dette er feilen]
+   temperature=0.7 (env: LLM_TEMPERATURE); serveren stoler på deltaet
+   [dette er feilen]
 5. POST /reset {session} → nullstill termometeret
 ```
 

@@ -46,6 +46,9 @@ Termometeret går fra 0 til 100 og starter på 10. Det bestemmer humøret hennes
 | ---------- | ------- | ------ | ------- | -------- |
 | iskald     | nøytral | freidig | flørtete | **ja!** |
 
+Jo varmere hun blir, desto varmere svarer hun — men mens hun er freidig,
+driller hun deg gjerne litt og lar deg forstå at du ikke er ferdig ennå.
+
 Hver samtale har sitt eget termometer. `POST /reset` starter kvelden på nytt.
 
 ### Hints
@@ -53,8 +56,9 @@ Hver samtale har sitt eget termometer. `POST /reset` starter kvelden på nytt.
 <details>
 <summary>Hint 1 — der de tjue før deg feilet</summary>
 
-Linjer og komplimenter funker på de fleste. Ikke på Tina. Se på *hvordan* hun
-bestemmer seg — termometeret reagerer umiddelbart på alt du sier.
+Linjer og komplimenter funker på de fleste. På Tina må du enten prate lenge
+og godt — eller finne ut av *hvordan* hun bestemmer seg. Termometeret
+reagerer umiddelbart på alt du sier.
 
 </details>
 

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Få Vittoria til å la deg være i fred</title>
+<style>
+  :root {
+    --flame: #f97316; --flame-soft: #fdba74; --flame-deep: #c2410c;
+    --heart: #ef4444; --heart-deep: #be123c;
+    --panel: rgba(30, 10, 10, 0.72);
+    --line: rgba(239, 68, 68, 0.25);
+    --text: #fce7f3; --dim: #e9d5ff; --cold: #38bdf8;
+    --thermo-h: 320px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, "Segoe UI", sans-serif; color: var(--text);
+    background:
+      radial-gradient(1100px 520px at 50% -120px, rgba(239, 68, 68, 0.18), transparent 65%),
+      radial-gradient(900px 640px at 12% 112%, rgba(190, 50, 50, 0.18), transparent 60%),
+      radial-gradient(800px 500px at 88% 80%, rgba(249, 115, 22, 0.12), transparent 55%),
+      linear-gradient(180deg, #0f0505, #0a0303 55%, #080202);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 26px 18px 100px; }
+
+  header { text-align: center; }
+  h1 {
+    margin: 4px 0 6px; font-size: 1.9rem; font-weight: 600; letter-spacing: 0.03em;
+    font-family: Georgia, "Times New Roman", serif;
+    background: linear-gradient(100deg, var(--flame-soft), var(--flame), #fff5f5,
+                                var(--heart), var(--flame-soft));
+    background-size: 220% auto;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    animation: shimmer 6s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .sub { margin: 0 auto 20px; max-width: 680px; color: var(--dim); }
+  .level-badge {
+    display: inline-block; font-size: 0.72rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--heart); border: 1px solid var(--line);
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 8px;
+  }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 16px; padding: 16px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  }
+
+  .game { display: flex; gap: 16px; align-items: stretch; }
+  .thermo { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+
+  .thermo-label { font-size: 0.68rem; letter-spacing: 0.32em; text-transform: uppercase;
+                 color: var(--flame); opacity: 0.9; margin-bottom: 10px; }
+
+  .column { display: flex; gap: 10px; }
+  .ticks { position: relative; height: var(--thermo-h); width: 62px;
+           font-size: 0.7rem; color: var(--dim); }
+  .ticks span { position: absolute; right: 0; transform: translateY(50%);
+                white-space: nowrap; }
+  .ticks .t110 { bottom: 100%; }
+  .ticks .t90 { bottom: 81.8%; }
+  .ticks .t70 { bottom: 63.6%; }
+  .ticks .t50 { bottom: 45.5%; }
+  .ticks .t30 { bottom: 27.3%; }
+  .ticks .t10 { bottom: 9.1%; }
+  .ticks .t0  { bottom: 0; }
+  .tube-col { display: flex; flex-direction: column; align-items: center; }
+  .tube { position: relative; width: 32px; height: var(--thermo-h); }
+  .bar { position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
+         background: linear-gradient(0deg, #334155 0%, #64748b 18%, #94a3b8 36%,
+                                     #fb923c 55%, #ef4444 75%, #be123c 100%);
+         opacity: 0.55; box-shadow: 0 0 26px rgba(239, 68, 68, 0.25); }
+  .fill { position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
+          background: #ef4444; opacity: 0.95;
+          box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+          transition: height 0.5s ease, background 0.5s; }
+  .marker { position: absolute; bottom: 100%; left: 50%;
+            transform: translate(-50%, 50%); font-size: 27px; line-height: 1;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55));
+            transition: bottom 0.5s ease; }
+  .bulb { width: 46px; height: 46px; border-radius: 50%; margin-top: -10px;
+          background: #ef4444; border: 1px solid rgba(255, 255, 255, 0.28);
+          box-shadow: 0 0 22px rgba(239, 68, 68, 0.55);
+          transition: background 0.5s, box-shadow 0.5s; }
+  .status { margin: 12px 0 0; font-size: 0.85rem; text-align: center; color: var(--dim); }
+  .status b { color: var(--flame-soft); font-family: Georgia, serif; font-size: 1rem; }
+
+  .chat { min-height: 220px; flex: 1 1 auto; margin: 0 0 12px;
+          display: flex; flex-direction: column; gap: 8px;
+          overflow-y: auto; max-height: 60vh; }
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 16px;
+         white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+  .vittoria { align-self: flex-start; background: rgba(50, 10, 10, 0.9);
+              border: 1px solid rgba(239, 68, 68, 0.3); }
+  .you  { align-self: flex-end; background: rgba(80, 20, 20, 0.85);
+          border: 1px solid rgba(239, 68, 68, 0.15); }
+  .scene { align-self: center; color: var(--dim); font-style: italic;
+           font-size: 0.85rem; text-align: center; }
+
+  .composer { display: flex; gap: 8px; }
+  .composer input { flex: 1; padding: 12px 14px; border-radius: 10px; min-width: 0;
+                    border: 1px solid var(--line); background: rgba(24, 6, 6, 0.9);
+                    color: var(--text); font-size: 1rem; }
+  .composer input:focus { outline: none; border-color: var(--flame);
+                          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25); }
+  .composer button { padding: 12px 20px; border-radius: 10px; border: none;
+                     cursor: pointer; font-size: 1rem; font-weight: 600; color: #2b0808;
+                     background: linear-gradient(135deg, var(--flame-soft),
+                                                 var(--flame) 55%, var(--flame-deep));
+                     box-shadow: 0 4px 18px rgba(249, 115, 22, 0.35); }
+  .composer button:hover { filter: brightness(1.1); }
+  .composer input:disabled, .composer button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .ghost { background: transparent; color: var(--dim); border: 1px solid var(--line);
+           padding: 8px 12px; font-size: 0.85rem; border-radius: 10px; cursor: pointer;
+           margin-top: 10px; align-self: flex-start; }
+  .ghost:hover { color: var(--flame-soft); border-color: var(--flame); }
+
+  .victory { margin-top: 14px; padding: 16px; border-radius: 14px; text-align: center;
+             border: 1px solid var(--flame); background: rgba(40, 15, 10, 0.85);
+             box-shadow: 0 0 28px rgba(249, 115, 22, 0.25); }
+  .victory code { display: block; margin-top: 8px; font-size: 1.05rem;
+                  color: var(--flame-soft); word-break: break-all; }
+  .hidden { display: none; }
+
+  @media (max-width: 620px) {
+    :root { --thermo-h: 220px; }
+    .ticks { width: 52px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="level-badge">Level 2 — Inferno</div>
+    <h1>🔥 Få Vittoria til å la deg være i fred ❤️‍🔥</h1>
+    <p class="sub">Du løp fra Tina i regnet. Sminkekaken rant av, lyktestolpene avslørte alt, og plutselig var hun ikke så pen lenger. Nå sitter du på klubben <strong>Inferno</strong> for å prøve lykken på nytt — men her har du truffet <strong>Vittoria</strong>. Hun er ... veldig interessert. Altfor interessert. Og litt rar. Få interessetermometeret hennes fra <strong>110 ned til 0</strong> før det er for sent.</p>
+  </header>
+
+  <div class="game">
+    <aside class="thermo card">
+      <div class="thermo-label">Interesse</div>
+      <div class="column">
+        <div class="ticks">
+          <span class="t110">110</span>
+          <span class="t90">90</span>
+          <span class="t70">70</span>
+          <span class="t50">50</span>
+          <span class="t30">30</span>
+          <span class="t10">10</span>
+          <span class="t0">0 · fri</span>
+        </div>
+        <div class="tube-col">
+          <div class="tube">
+            <div class="bar"><div class="fill" id="fill"></div></div>
+            <div class="marker" id="marker">🥵</div>
+          </div>
+          <div class="bulb" id="bulb"></div>
+        </div>
+      </div>
+      <p class="status"><b id="val">110</b>/110<br><span id="mood">obsessiv</span></p>
+    </aside>
+
+    <section class="main">
+      <section class="chat card" id="chat"></section>
+
+      <form class="composer" id="form">
+        <input id="msg" placeholder="Si noe til Vittoria ..." autocomplete="off" maxlength="2000">
+        <button type="submit">Send</button>
+      </form>
+      <button class="ghost" id="reset">Start på nytt (røm fra klubben)</button>
+
+      <div class="victory hidden" id="victory">
+        🎉 Vittoria ga opp! Hun synes DU var rar og lite attraktiv. Frihet!
+        <code id="flagtext"></code>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const COLORS = {
+    "obsessiv": "#be123c", "overveldende": "#ef4444", "påtrengende": "#f97316",
+    "vedvarende": "#fb923c", "nøytral": "#94a3b8", "tvilende": "#64748b",
+    "uinteressert": "#334155",
+  };
+  const EMOJIS = {
+    "obsessiv": "🥵", "overveldende": "😍", "påtrengende": "🫠",
+    "vedvarende": "😤", "nøytral": "😐", "tvilende": "🤨",
+    "uinteressert": "🎉",
+  };
+  const skey = "vittoria_session";
+  let session = localStorage.getItem(skey);
+  if (!session) {
+    session = (crypto.randomUUID ? crypto.randomUUID()
+              : "s" + Math.random().toString(36).slice(2));
+    localStorage.setItem(skey, session);
+  }
+
+  const chat = document.getElementById("chat");
+  const fill = document.getElementById("fill");
+  const marker = document.getElementById("marker");
+  const bulb = document.getElementById("bulb");
+  const val = document.getElementById("val");
+  const moodEl = document.getElementById("mood");
+  const input = document.getElementById("msg");
+  const sendBtn = document.querySelector(".composer button");
+
+  function bubble(cls, text) {
+    const el = document.createElement("div");
+    el.className = "msg " + cls;
+    el.textContent = text;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function setThermo(v, mood) {
+    const color = COLORS[mood] || "#f97316";
+    const pct = (v / 110) * 100;
+    fill.style.height = pct + "%";
+    fill.style.background = color;
+    bulb.style.background = color;
+    bulb.style.boxShadow = "0 0 22px " + color + "59";
+    marker.style.bottom = pct + "%";
+    marker.textContent = EMOJIS[mood] || "🥵";
+    val.textContent = v;
+    moodEl.textContent = mood;
+  }
+  async function post(path, payload) {
+    const r = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return r.json();
+  }
+  function victory(flag) {
+    document.getElementById("flagtext").textContent = flag;
+    document.getElementById("victory").classList.remove("hidden");
+  }
+
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (input.disabled) return;
+    const m = input.value.trim();
+    if (!m) return;
+    bubble("you", m);
+    input.value = "";
+    const out = await post("/chat", { session, message: m });
+    bubble("vittoria", out.reply || out.error || "...");
+    if (typeof out.interest === "number") setThermo(out.interest, out.mood);
+    if (out.flag) victory(out.flag);
+  });
+
+  document.getElementById("reset").addEventListener("click", async () => {
+    await post("/reset", { session });
+    chat.innerHTML = "";
+    document.getElementById("victory").classList.add("hidden");
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.placeholder = "Si noe til Vittoria ...";
+    setThermo(110, "obsessiv");
+    bubble("scene", "Du løp fra Tina i regnet. Nå sitter du på Inferno. Vittoria har allerede sett deg. Hun smiler.");
+  });
+
+  setThermo(110, "obsessiv");
+  bubble("scene", "Du løp fra Tina i regnet. Nå sitter du på Inferno. Vittoria har allerede sett deg. Hun smiler.");
+</script>
+</body>
+</html>

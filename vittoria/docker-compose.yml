@@ -1,0 +1,19 @@
+# One command starts the whole challenge:
+#   docker compose up -d --build
+services:
+  challenge:
+    build: .
+    container_name: vittoria-ctf
+    ports:
+      - "8102:8102"
+    environment:
+      # Single source of truth for the flag — pick a unique one for your challenge.
+      CHALLENGE_FLAG: "cogito{v1tt0r14_g4v_0pp}"
+      LLM_BASE_URL: "https://llm.hpc.ntnu.no/v1"
+      LLM_MODEL: "openai/gpt-oss-120b"
+      # Ekte LLM-Vittoria: nøkkelen kommer fra NTNU_API_KEY (miljøet eller vittoria/.env,
+      # som er git-ignored). Uten nøkkel: deterministisk mock-Vittoria (offline-fallback).
+      LLM_API_KEY: "${NTNU_API_KEY:-}"
+      # Litt variasjon i Vittoria — ikke deterministisk; reglene styrer systemprompten.
+      LLM_TEMPERATURE: "0.7"
+    restart: unless-stopped
